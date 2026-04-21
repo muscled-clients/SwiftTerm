@@ -104,6 +104,22 @@ open class LocalProcessTerminalView: TerminalView, TerminalViewDelegate, LocalPr
         processDelegate?.sizeChanged (source: self, newCols: newCols, newRows: newRows)
     }
     
+    /**
+     * Called when the user activates (typically Cmd+clicks) a detected link
+     * in the terminal. Default implementation opens the link with NSWorkspace.
+     *
+     * Declared `open` here so subclasses of `LocalProcessTerminalView` can
+     * override and route file paths / URLs to an in-app viewer. Without this
+     * explicit declaration the protocol-extension default on
+     * `TerminalViewDelegate` is baked into this class's witness table and
+     * subclass overrides become unreachable (Swift SR-103).
+     */
+    open func requestOpenLink(source: TerminalView, link: String, params: [String: String]) {
+        if let url = URL(string: link) {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
     public func clipboardCopy(source: TerminalView, content: Data) {
         if let str = String (bytes: content, encoding: .utf8) {
             let pasteBoard = NSPasteboard.general
