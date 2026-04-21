@@ -2102,10 +2102,18 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     
     public override func mouseUp(with event: NSEvent) {
         let hit = calculateMouseHit(with: event).grid
-        updateHoverLink(at: hit, commandOverride: commandActive || event.modifierFlags.contains(.command))
-        if let result = linkForClick(at: hit, hasCommandModifier: event.modifierFlags.contains(.command)) {
+        let hasCmd = event.modifierFlags.contains(.command)
+        updateHoverLink(at: hit, commandOverride: commandActive || hasCmd)
+        if hasCmd {
+            let match = terminal.linkMatch(at: .buffer(hit), mode: .explicitAndImplicit)
+            print("[SwiftTerm] Cmd+mouseUp hit=(\(hit.row),\(hit.col)) mode=\(linkHighlightMode) matchText=\(match?.text ?? "nil")")
+        }
+        if let result = linkForClick(at: hit, hasCommandModifier: hasCmd) {
+            print("[SwiftTerm] linkForClick resolved: \(result.link)")
             terminalDelegate?.requestOpenLink(source: self, link: result.link, params: result.params)
             return
+        } else if hasCmd {
+            print("[SwiftTerm] linkForClick returned nil on Cmd+click")
         }
         if allowMouseReporting && terminal.mouseMode.sendButtonRelease() {
             sharedMouseEvent(with: event)
