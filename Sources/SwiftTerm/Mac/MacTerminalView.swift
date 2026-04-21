@@ -745,7 +745,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     //
     // NSTextInputClient protocol implementation
     //
-    public override func becomeFirstResponder() -> Bool {
+    open override func becomeFirstResponder() -> Bool {
         let response = super.becomeFirstResponder()
         if response {
             hasFocus = true
@@ -754,8 +754,8 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         }
         return response
     }
-    
-    public override func resignFirstResponder() -> Bool {
+
+    open override func resignFirstResponder() -> Bool {
         let response = super.resignFirstResponder()
         if response {
             caretView.disableAnimations()
@@ -763,6 +763,13 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             terminal.setTerminalFocus(false)
         }
         return response
+    }
+
+    /// Public subclass hook to hide/show the caret view directly.
+    /// Lets host apps implement "only one caret visible across many tiles"
+    /// without relying on caretColor tricks or polling observers.
+    open func setCaretHidden(_ hidden: Bool) {
+        caretView.isHidden = hidden
     }
     
     public override var acceptsFirstResponder: Bool {
