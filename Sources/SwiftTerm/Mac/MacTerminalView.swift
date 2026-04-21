@@ -769,7 +769,29 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     /// Lets host apps implement "only one caret visible across many tiles"
     /// without relying on caretColor tricks or polling observers.
     open func setCaretHidden(_ hidden: Bool) {
-        caretView.isHidden = hidden
+        guard let cv = caretView else { return }
+        cv.isHidden = hidden
+        if hidden {
+            cv.disableAnimations()
+        }
+        // Move the caret off-screen while hidden so even if some code path
+        // accidentally forces a draw, there is nothing to paint.
+        // When unhidden, SwiftTerm's positionCursor/updateCaretView will
+        // restore the correct origin on the next range change.
+        if hidden {
+            cv.frame = .zero
+        }
+    }
+
+    /// Readback for the caret's current hidden state (for host diagnostics).
+    open func isCaretHidden() -> Bool {
+        return caretView?.isHidden ?? true
+    }
+
+    /// Readback for the caret's current frame (for host diagnostics).
+    open func caretFrameDescription() -> String {
+        guard let f = caretView?.frame else { return "nil" }
+        return "\(f)"
     }
     
     public override var acceptsFirstResponder: Bool {
