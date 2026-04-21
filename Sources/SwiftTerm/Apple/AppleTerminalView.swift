@@ -865,7 +865,11 @@ extension TerminalView {
         case .always:
             return match.isExplicit
         case .alwaysWithModifier:
-            return match.isExplicit && hasCommandModifier
+            // Allow Cmd-click on any detected link (explicit OR implicit path)
+            // without requiring prior hover. This matches iTerm2 / VS Code UX
+            // where Cmd+click opens a path even if the cursor hasn't hovered
+            // over it with Cmd held first.
+            return hasCommandModifier
         case .hover:
             return linkHighlightRange == match.rowRanges
         case .hoverWithModifier:
