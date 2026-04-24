@@ -168,6 +168,20 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     private var lastProgressValue: UInt8?
 
     var selection: SelectionService!
+
+    /// Public read-only view of the active selection range, for downstream
+    /// subclasses that need to post-process the copied text (e.g. rejoining
+    /// lines that the terminal soft-wrapped across rows). Returns nil when
+    /// no active selection exists. Kept narrow — just the buffer-relative
+    /// (row, col) endpoints — so future changes to SelectionService's
+    /// private representation don't leak out.
+    public var selectionRange: (start: Position, end: Position)? {
+        guard let selection, selection.active, selection.hasSelectionRange else {
+            return nil
+        }
+        return (selection.start, selection.end)
+    }
+
     private var scroller: NSScroller!
     
     // Attribute dictionary, maps a console attribute (color, flags) to the corresponding dictionary
