@@ -737,7 +737,12 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         updateCursorPosition()
     }
 
-    public override func resizeSubviews(withOldSize oldSize: NSSize) {
+    /// Changed from `public override` to `open override` (Gii Patch 6)
+    /// so embedders can override this method. The upstream implementation
+    /// unconditionally clears `selection.active` on every resize, which
+    /// fires on every SwiftUI layout pass and wipes text selections mid-
+    /// stream. Embedders may want to keep the selection alive.
+    open override func resizeSubviews(withOldSize oldSize: NSSize) {
         super.resizeSubviews(withOldSize: oldSize)
         updateScroller()
         selection.active = false
