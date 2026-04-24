@@ -437,7 +437,13 @@ open class Terminal {
     var refreshEnd = -1
     var scrollInvariantRefreshStart = Int.max
     var scrollInvariantRefreshEnd = -1
-    var userScrolling = false
+    /// When true, new PTY output does NOT advance `yDisp` past `yBase`, so
+    /// the viewport stays pinned where the user scrolled. `scroll(toPosition:)`
+    /// flips this internally for its own duration. Embedders that implement
+    /// scroll-lock via an NSEvent monitor + `scrollTo(row:)` need to set this
+    /// directly. Exposed as `public` by the Gii fork — Patch 5 in
+    /// docs/SWIFTTERM_FORK_RUNBOOK.md.
+    public var userScrolling = false
     var lineFeedMode = false
     
     // We do not implement smooth scrolling here, dubious value, but
