@@ -737,15 +737,19 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         updateCursorPosition()
     }
 
-    /// Changed from `public override` to `open override` (Gii Patch 6)
-    /// so embedders can override this method. The upstream implementation
-    /// unconditionally clears `selection.active` on every resize, which
-    /// fires on every SwiftUI layout pass and wipes text selections mid-
-    /// stream. Embedders may want to keep the selection alive.
+    /// Gii Patch 6: made `open` so embedders can override.
+    ///
+    /// Gii Patch 7: removed the unconditional `selection.active = false`.
+    /// Upstream cleared the selection on every resize, which fires on
+    /// every SwiftUI layout pass (state changes in parent views) and
+    /// wiped any text selection mid-stream. Real geometry resizes are
+    /// rare; the few cases where the selection *should* follow cell
+    /// geometry changes are better handled by callers that actually
+    /// change cols/rows. The common path (SwiftUI relayout where cell
+    /// geometry hasn't changed) should leave selection intact.
     open override func resizeSubviews(withOldSize oldSize: NSSize) {
         super.resizeSubviews(withOldSize: oldSize)
         updateScroller()
-        selection.active = false
         updateProgressBarFrame()
     }
     
