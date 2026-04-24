@@ -1965,10 +1965,11 @@ extension TerminalView {
     func feedPrepare()
     {
         search.invalidate()
-        // Preserve manual selection while output is streaming when mouse reporting is disabled.
-        if allowMouseReporting {
-            selection.active = false
-        }
+        // Gii Patch 8: upstream cleared the selection on every PTY feed
+        // chunk when mouse reporting was on (i.e. during TUI sessions),
+        // making it impossible to keep a selection alive while Claude
+        // streamed. Removing the unconditional clear — actual mouse-
+        // reported clicks still drop the selection on their own.
         startDisplayUpdates()
     }
     
