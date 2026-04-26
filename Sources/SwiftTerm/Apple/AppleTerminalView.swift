@@ -2333,6 +2333,29 @@ extension TerminalView {
         selection.selectNone()
     }
 
+    /// Sets an explicit character-level selection covering the given columns on one screen row.
+    ///
+    /// `screenRow` is 0-based from the top of the **visible** viewport (i.e. the same
+    /// coordinate space returned by `Terminal.getLine(row:)`).  The method converts it
+    /// to a buffer-absolute row by adding `displayBuffer.yDisp` before passing it to
+    /// `SelectionService.setSelection`, so the selection is stable even if the user
+    /// scrolls up before calling this.
+    ///
+    /// `startCol` and `endCol` are inclusive, 0-based column indices clamped to
+    /// `[0, cols-1]`.  Passing `startCol > endCol` is a no-op.
+    ///
+    /// Triggers `selectionChanged` on the terminal delegate, so the view redraws
+    /// with the new highlight.  Call `selectNone()` first if you want to clear any
+    /// prior selection before setting the new one.
+    public func setSelection(screenRow: Int, startCol: Int, endCol: Int) {
+        guard startCol <= endCol else { return }
+        let yDisp = terminal.displayBuffer.yDisp
+        let bufRow = screenRow + yDisp
+        let start = Position(col: startCol, row: bufRow)
+        let end   = Position(col: endCol,   row: bufRow)
+        selection.setSelection(start: start, end: end)
+    }
+
 }
 
 #if canImport(UIKit) && DEBUG
