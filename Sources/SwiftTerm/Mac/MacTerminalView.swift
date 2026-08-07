@@ -2072,6 +2072,30 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         return calculateMouseHit(at: point)
     }
 
+    /// [gii-patch] Patch 10: selection-endpoint hit with HALF-CELL rounding.
+    ///
+    /// `calculateMouseHit` floors the column (cell under the pointer), and the
+    /// selection end column is treated as EXCLUSIVE by both the highlight and
+    /// `getSelectedText`. Combined, a drag that stops ON the final character
+    /// excludes it — the user had to overshoot into the next cell to copy a
+    /// full URL ("the last letter is always missing"). Standard terminal
+    /// behavior (xterm/iTerm) includes a character once the pointer crosses
+    /// its midpoint; this variant implements that by rounding at half-cell.
+    /// Used ONLY for the moving endpoint of a selection (drag/shift-extend);
+    /// selection anchors and mouse-reporting keep the floored mapping.
+    func calculateSelectionEndHit (with event: NSEvent) -> Position
+    {
+        let point = convert(event.locationInWindow, from: nil)
+        let displayBuffer = terminal.displayBuffer
+        let col = Int ((point.x / cellDimension.width) + 0.5)
+        let row = Int ((frame.height-point.y) / cellDimension.height)
+        let colValue = min (max (0, col), terminal.cols)
+        let bufferRow = row + displayBuffer.yDisp
+        let maxRow = max (0, displayBuffer.lines.count - 1)
+        let rowValue = min (max (0, bufferRow), maxRow)
+        return Position(col: colValue, row: rowValue)
+    }
+
     func calculateMouseHit (at point: CGPoint) -> (grid: Position, pixels: Position)
     {
         func toInt (_ p: NSPoint) -> Position {
@@ -2125,7 +2149,8 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         case 1:
             if selection.active == true {
                 if event.modifierFlags.contains(.shift) {
-                    selection.shiftExtend(bufferPosition: Position(col: hit.col, row: hit.row))
+                    // [gii-patch] Patch 10: half-cell rounding for the moving endpoint.
+                    selection.shiftExtend(bufferPosition: calculateSelectionEndHit(with: event))
                 } else {
                     selection.active = false
                 }
@@ -2190,7 +2215,10 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         }
                 
         if selection.active {
-            selection.dragExtend(bufferPosition: Position(col: hit.col, row: hit.row))
+            // [gii-patch] Patch 10: half-cell rounding for the moving endpoint
+            // (anchor keeps the floored hit — clicking anywhere on a char
+            // starts the selection at that char).
+            selection.dragExtend(bufferPosition: calculateSelectionEndHit(with: event))
         } else {
             selection.setSoftStart(bufferPosition: Position(col: hit.col, row: hit.row))
             selection.startSelection()
