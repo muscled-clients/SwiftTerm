@@ -2356,6 +2356,23 @@ extension TerminalView {
         selection.setSelection(start: start, end: end)
     }
 
+    /// [gii-patch] Patch 11: multi-row selection.
+    ///
+    /// The single-row `setSelection(screenRow:startCol:endCol:)` above cannot
+    /// express a selection that spans rows, which is what a soft-wrapped
+    /// paragraph is: the terminal broke one logical line across several buffer
+    /// rows, so selecting "the paragraph" means selecting from a column on one
+    /// row to a column on a later one. Rows are screen-relative (same
+    /// convention as the single-row call) and converted with `yDisp` here.
+    public func setSelection(startScreenRow: Int, startCol: Int,
+                             endScreenRow: Int, endCol: Int) {
+        let yDisp = terminal.displayBuffer.yDisp
+        let start = Position(col: startCol, row: startScreenRow + yDisp)
+        let end   = Position(col: endCol,   row: endScreenRow + yDisp)
+        guard Position.compare(start, end) != .after else { return }
+        selection.setSelection(start: start, end: end)
+    }
+
 }
 
 #if canImport(UIKit) && DEBUG
